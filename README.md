@@ -1,32 +1,57 @@
-# React + TypeScript + Vite
+# 天气ing
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+一个液态玻璃风格的天气查询网页，支持自动定位、区县搜索、逐时预报、7天预报和空气质量展示。
 
-Currently, two official plugins are available:
+## 特性
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- 天气动态背景 + 全屏循环动效
+- 液态玻璃风格 UI（毛玻璃 + 半透明）
+- 浏览器自动定位，推送当地天气
+- 区县级天气搜索
+- 24 小时逐时预报
+- 7 天天气预报
+- 空气质量、紫外线、湿度、风速、气压、能见度、日出日落
+- 生活建议
 
-## React Compiler
+## 技术栈
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React 19 + TypeScript
+- Vite 8
+- Tailwind CSS v4
+- framer-motion
 
-## Expanding the Oxlint configuration
+## 数据
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+- 当前：Mock 数据（模拟中国气象局格式）
+- 后续：和风天气 API（需申请 API Key）
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## 环境变量
+
+复制 `.env.example` 为 `.env`：
+
+```bash
+VITE_DATA_MODE=mock
+# VITE_QWEATHER_KEY=your_key_here
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+切换到真实天气数据时：
+
+```bash
+VITE_DATA_MODE=api
+VITE_QWEATHER_KEY=your_key_here
+```
+
+## 本地运行
+
+```bash
+npm install
+npm run dev
+```
+
+## 部署
+
+已配置 GitHub Actions 自动部署到 GitHub Pages。推送代码到 `main` 分支后自动触发。
+
+---
+
+© 2026 天气ing
