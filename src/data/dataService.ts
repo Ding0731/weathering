@@ -2,57 +2,31 @@ import type { WeatherData, GeoLocation } from './types'
 import { mockWeatherData, mockGeoLocations } from './mockData'
 
 const DATA_MODE = import.meta.env.VITE_DATA_MODE || 'mock'
-const QWEATHER_KEY = import.meta.env.VITE_QWEATHER_KEY || ''
+const AMAP_KEY = import.meta.env.VITE_AMAP_KEY || ''
 
-async function fetchFromAPI(path: string): Promise<unknown> {
-  const url = `https://devapi.qweather.com${path}?key=${QWEATHER_KEY}`
+// 高德天气API (数据来源: 中国气象局)
+const AMAP_BASE = 'https://restapi.amap.com/v3'
+
+async function fetchAmap(path: string): Promise<unknown> {
+  const url = `${AMAP_BASE}${path}&key=${AMAP_KEY}`
   const res = await fetch(url)
   if (!res.ok) throw new Error(`API error: ${res.status}`)
   return res.json()
 }
 
-function mapApiCurrent(raw: unknown): WeatherData['current'] {
-  const r = raw as Record<string, unknown>
-  return {
-    location: `${r.province} ${r.city} ${r.district}`,
-    province: String(r.province ?? ''),
-    city: String(r.city ?? ''),
-    district: String(r.district ?? ''),
-    latitude: Number(r.lat ?? 0),
-    longitude: Number(r.lon ?? 0),
-    weatherType: mapWeatherCode(String(r.icon ?? '100')),
-    weatherText: String(r.text ?? ''),
-    temperature: Number(r.temp ?? 0),
-    feelsLike: Number(r.feelsLike ?? 0),
-    humidity: Number(r.humidity ?? 0),
-    windSpeed: Number(r.windSpeed ?? 0),
-    windDirection: String(r.windDir ?? ''),
-    wind360: Number(r.wind360 ?? 0),
-    pressure: Number(r.pressure ?? 0),
-    visibility: Number(r.vis ?? 0),
-    uvIndex: Number(r.uvIndex ?? 0),
-    aqi: Number(r.aqi ?? 0),
-    aqiLevel: String(r.aqiLevel ?? ''),
-    aqiCategory: String(r.aqiCategory ?? ''),
-    sunrise: String(r.sunrise ?? ''),
-    sunset: String(r.sunset ?? ''),
-    updateTime: String(r.updateTime ?? ''),
-  }
-}
-
-function mapWeatherCode(icon: string): WeatherData['current']['weatherType'] {
-  const code = parseInt(icon)
-  if (code === 100) return 'sunny'
-  if (code === 101 || code === 102 || code === 103) return 'partly_cloudy'
-  if (code === 104 || code === 150 || code === 151) return 'cloudy'
-  if (code >= 300 && code <= 304) return 'light_rain'
-  if (code >= 305 && code <= 309) return 'moderate_rain'
-  if (code >= 310 && code <= 312) return 'heavy_rain'
-  if (code >= 313 && code <= 318) return 'thunderstorm'
-  if (code >= 400 && code <= 406) return 'snow'
-  if (code >= 500 && code <= 502) return 'fog'
-  if (code >= 503 && code <= 509) return 'haze'
-  if (code >= 800) return 'windy'
+function mapAmapWeather(text: string): WeatherData['current']['weatherType'] {
+  const t = text.toLowerCase()
+  if (t.includes('晴')) return 'sunny'
+  if (t.includes('少云') || t.includes('晴间多云')) return 'partly_cloudy'
+  if (t.includes('多云') || t.includes('阴')) return 'cloudy'
+  if (t.includes('小雨') || t.includes('阵雨')) return 'light_rain'
+  if (t.includes('中雨')) return 'moderate_rain'
+  if (t.includes('大雨') || t.includes('暴雨')) return 'heavy_rain'
+  if (t.includes('雷')) return 'thunderstorm'
+  if (t.includes('雪') || t.includes('冰雹')) return 'snow'
+  if (t.includes('雾')) return 'fog'
+  if (t.includes('霾') || t.includes('沙尘')) return 'haze'
+  if (t.includes('风') || t.includes('台风')) return 'windy'
   return 'partly_cloudy'
 }
 
@@ -62,51 +36,86 @@ export async function getWeatherData(locationId?: string): Promise<WeatherData> 
   }
 
   try {
-    const id = locationId || '101020600'
-    const [weatherNow, hourly, daily, indices] = await Promise.all([
-      fetchFromAPI(`/v7/weather-now?location=${id}`),
-      fetchFromAPI(`/v7/weather-24h?location=${id}`),
-      fetchFromAPI(`/v7/weather-7d?location=${id}`),
-      fetchFromAPI(`/v7/indices?location=${id}&type=0`),
+    const adcode = locationId || '310115' // 默认浦东新区adcode
+
+    // 高德实时天气 + 预报天气
+    const [liveRes, forecastRes] = await Promise.all([
+      fetchAmap(`/weather/weatherInfo?city=${adcode}&extensions=base`),
+      fetchAmap(`/weather/weatherInfo?city=${adcode}&extensions=all`),
     ])
 
-    const wNow = (weatherNow as Record<string, unknown>)?.now as Record<string, unknown>
-    const hList = ((hourly as Record<string, unknown>)?.hourly ?? []) as Record<string, unknown>[]
-    const dList = ((daily as Record<string, unknown>)?.daily ?? []) as Record<string, unknown>[]
-    const iList = ((indices as Record<string, unknown>)?.daily ?? []) as Record<string, unknown>[]
+    const livesArr = ((liveRes as Record<string, unknown>)?.lives ?? []) as Record<string, unknown>[]
+    const forecastsArr = ((forecastRes as Record<string, unknown>)?.forecasts ?? []) as Record<string, unknown>[]
+    const live = livesArr[0] ?? {}
+    const forecasts = forecastsArr[0] ?? {}
+    const castList = (forecasts?.casts ?? []) as Record<string, unknown>[]
+
+    if (!live) return mockWeatherData
+
+    const province = String(live.province ?? '')
+    const city = String(live.city ?? '')
+    const district = String(live.district ?? '')
+    const weatherText = String(live.weather ?? '')
+    const temp = Number(live.temperature ?? 0)
+    const windDir = String(live.winddirection ?? '')
+    const windPower = String(live.windpower ?? '')
+    const humidity = Number(live.humidity ?? 0)
+    const reportTime = String(live.reporttime ?? '')
+
+    // AQI from 高德 (需要额外调用，但base模式不含AQI，用mock值)
+    const mockCurrent = mockWeatherData.current
 
     return {
-      current: mapApiCurrent({ ...wNow, location: id }),
-      hourly: hList.map(h => ({
-        time: String(h.fxTime ?? '').slice(11, 16),
-        weatherType: mapWeatherCode(String(h.icon ?? '100')),
-        weatherText: String(h.text ?? ''),
-        temperature: Number(h.temp ?? 0),
-        precipitation: Number(h.precip ?? 0),
-        windSpeed: Number(h.windSpeed ?? 0),
-        windDirection: String(h.windDir ?? ''),
-        humidity: Number(h.humidity ?? 0),
-      })),
-      daily: dList.map(d => ({
-        date: String(d.fxDate ?? '').slice(5),
-        weekday: '',
-        weatherTypeDay: mapWeatherCode(String(d.iconDay ?? '100')),
-        weatherTypeNight: mapWeatherCode(String(d.iconNight ?? '100')),
-        weatherTextDay: String(d.textDay ?? ''),
-        weatherTextNight: String(d.textNight ?? ''),
-        tempMax: Number(d.tempMax ?? 0),
-        tempMin: Number(d.tempMin ?? 0),
-        precipitation: Number(d.precip ?? 0),
-        uvIndex: Number(d.uvIndex ?? 0),
-        sunrise: String(d.sunrise ?? ''),
-        sunset: String(d.sunset ?? ''),
-      })),
-      lifeAdvice: iList.map(i => ({
-        category: String(i.name ?? ''),
-        level: String(i.level ?? ''),
-        text: String(i.text ?? ''),
-        icon: String(i.type ?? ''),
-      })),
+      current: {
+        location: `${province} ${city} ${district}`,
+        province,
+        city,
+        district,
+        latitude: mockCurrent.latitude,
+        longitude: mockCurrent.longitude,
+        weatherType: mapAmapWeather(weatherText),
+        weatherText,
+        temperature: temp,
+        feelsLike: temp + Math.round((humidity - 60) * 0.1), // 估算体感温度
+        humidity,
+        windSpeed: parseInt(windPower) || 0,
+        windDirection: windDir,
+        wind360: 0,
+        pressure: mockCurrent.pressure,
+        visibility: mockCurrent.visibility,
+        uvIndex: mockCurrent.uvIndex,
+        aqi: mockCurrent.aqi,
+        aqiLevel: mockCurrent.aqiLevel,
+        aqiCategory: mockCurrent.aqiCategory,
+        sunrise: String(castList[0]?.sunrise ?? mockCurrent.sunrise),
+        sunset: String(castList[0]?.sunset ?? mockCurrent.sunset),
+        updateTime: reportTime,
+      },
+      hourly: mockWeatherData.hourly, // 高德免费API不含逐时数据，用mock
+      daily: castList.map((cast, i) => {
+        const dayWeather = String(cast.dayweather ?? '')
+        const nightWeather = String(cast.nightweather ?? '')
+        const dayTemp = Number(cast.daytemp ?? 0)
+        const nightTemp = Number(cast.nighttemp ?? 0)
+        const weekdays = ['今天', '周一', '周二', '周三', '周四', '周五', '周六', '周日']
+        const dateStr = String(cast.date ?? '')
+
+        return {
+          date: dateStr.slice(4, 6) + '-' + dateStr.slice(6, 8) || `07-${13 + i}`,
+          weekday: weekdays[i] || `第${i}天`,
+          weatherTypeDay: mapAmapWeather(dayWeather),
+          weatherTypeNight: mapAmapWeather(nightWeather),
+          weatherTextDay: dayWeather,
+          weatherTextNight: nightWeather,
+          tempMax: dayTemp,
+          tempMin: nightTemp,
+          precipitation: 0,
+          uvIndex: 5,
+          sunrise: String(cast.sunrise ?? ''),
+          sunset: String(cast.sunset ?? ''),
+        }
+      }).slice(0, 7),
+      lifeAdvice: mockWeatherData.lifeAdvice, // 高德不含生活指数，用mock
     }
   } catch {
     return mockWeatherData
@@ -122,17 +131,56 @@ export async function searchLocation(keyword: string): Promise<GeoLocation[]> {
   }
 
   try {
-    const res = await fetchFromAPI(`/v2/city/lookup?location=${encodeURIComponent(keyword)}`)
-    const list = ((res as Record<string, unknown>)?.location ?? []) as Record<string, unknown>[]
-    return list.map(l => ({
-      id: String(l.id ?? ''),
-      name: String(l.name ?? ''),
-      province: String(l.adm1 ?? ''),
-      city: String(l.adm2 ?? ''),
-      district: String(l.name ?? ''),
-      latitude: Number(l.lat ?? 0),
-      longitude: Number(l.lon ?? 0),
-    }))
+    const res = await fetchAmap(`/config/district?keywords=${encodeURIComponent(keyword)}&subdistrict=3`)
+    const districts = ((res as Record<string, unknown>)?.districts ?? []) as Record<string, unknown>[]
+
+    const results: GeoLocation[] = []
+    for (const d of districts) {
+      const adcode = String(d.adcode ?? '')
+      const name = String(d.name ?? '')
+      const level = String(d.level ?? '')
+      const center = String(d.center ?? '')
+      const [lng, lat] = center.split(',').map(Number)
+
+      // 只取区县级
+      if (level === 'district' || level === 'street') {
+        results.push({
+          id: adcode,
+          name,
+          province: String(d.adm1 ?? d.adm1_prov ?? ''),
+          city: String(d.adm2 ?? d.adm2_city ?? ''),
+          district: name,
+          latitude: lat || 0,
+          longitude: lng || 0,
+        })
+      }
+
+      // 也处理区县子节点
+      const children = (d.districtList ?? []) as Record<string, unknown>[]
+      for (const child of children) {
+        const childAdcode = String(child.adcode ?? '')
+        const childName = String(child.name ?? '')
+        const childCenter = String(child.center ?? '')
+        const [childLng, childLat] = childCenter.split(',').map(Number)
+        const childLevel = String(child.level ?? '')
+
+        if (childLevel === 'district' || childLevel === 'street') {
+          results.push({
+            id: childAdcode,
+            name: childName,
+            province: name,
+            city: name,
+            district: childName,
+            latitude: childLat || 0,
+            longitude: childLng || 0,
+          })
+        }
+      }
+    }
+
+    return results.length > 0 ? results : mockGeoLocations.filter(
+      g => g.name.toLowerCase().includes(keyword.toLowerCase()),
+    )
   } catch {
     return mockGeoLocations.filter(
       g => g.name.toLowerCase().includes(keyword.toLowerCase()),

@@ -12,20 +12,20 @@ export default function DailyForecast({ daily }: DailyForecastProps) {
   const range = maxTemp - minTemp || 1
 
   return (
-    <div className="glass p-4 fade-in-delay-3">
-      <h3 className="text-sm font-medium glass-text-muted mb-3">7天预报</h3>
-      <div className="space-y-2.5">
+    <div className="glass p-4 md:p-5 fade-in-delay-3">
+      <h3 className="text-sm font-medium text-glass-muted mb-3">7天预报</h3>
+      <div className="space-y-3">
         {daily.map((day, i) => {
           const lowPct = ((day.tempMin - minTemp) / range) * 100
           const highPct = ((day.tempMax - minTemp) / range) * 100
 
           return (
-            <div key={day.date} className="flex items-center gap-3 text-sm">
-              <span className="glass-text-muted w-8 shrink-0">{i === 0 ? '今天' : day.weekday}</span>
-              <span className="text-lg shrink-0">{weatherIconMap[day.weatherTypeDay]}</span>
-              <span className="glass-text-secondary w-14 shrink-0 truncate text-xs">{day.weatherTextDay}</span>
-              <span className="glass-text-muted w-7 text-right shrink-0 text-xs">{day.tempMin}°</span>
-              <div className="flex-1 h-1.5 bg-white/8 rounded-full relative mx-1">
+            <div key={day.date} className="flex items-center gap-3 text-sm md:text-base">
+              <span className="text-glass-muted w-10 shrink-0">{i === 0 ? '今天' : day.weekday}</span>
+              <span className="text-xl shrink-0">{weatherIconMap[day.weatherTypeDay]}</span>
+              <span className="text-glass-secondary w-16 shrink-0 truncate">{day.weatherTextDay}</span>
+              <span className="text-glass-muted w-8 text-right shrink-0">{day.tempMin}°</span>
+              <div className="flex-1 h-2 bg-white/8 rounded-full relative mx-2">
                 <div
                   className="absolute h-full rounded-full"
                   style={{
@@ -35,7 +35,7 @@ export default function DailyForecast({ daily }: DailyForecastProps) {
                   }}
                 />
               </div>
-              <span className="glass-text w-7 shrink-0 text-xs">{day.tempMax}°</span>
+              <span className="text-glass-primary w-8 shrink-0">{day.tempMax}°</span>
             </div>
           )
         })}

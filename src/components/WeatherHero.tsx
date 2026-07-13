@@ -6,56 +6,96 @@ interface WeatherHeroProps {
 }
 
 export default function WeatherHero({ current }: WeatherHeroProps) {
-  const icon = weatherIconMap[current.weatherType] || '☁'
+  const icon = weatherIconMap[current.weatherType] || '⛅'
 
   return (
-    <div className="glass p-6 fade-in">
-      <div className="flex items-start justify-between">
+    <section className="glass-hero p-6 md:p-8 lg:p-10 fade-in space-y-4">
+      {/* 位置与更新时间 */}
+      <div className="flex items-center justify-between">
         <div>
-          <div className="text-6xl">{icon}</div>
-          <div className="text-lg glass-text-secondary mt-2">{current.weatherText}</div>
-          <div className="text-xs glass-text-muted mt-0.5">
-            体感 {current.feelsLike}° · 湿度 {current.humidity}%
-          </div>
+          <h1 className="text-glass-secondary text-sm md:text-base font-medium">
+            {current.location}
+          </h1>
+          <p className="text-glass-dim text-xs mt-1">
+            {current.updateTime.slice(11, 16)} 更新
+          </p>
         </div>
-        <div className="text-right">
-          <div className="text-8xl font-extralight glass-text tracking-tighter leading-none">
-            {current.temperature}
-            <span className="text-4xl font-light opacity-40">°</span>
-          </div>
+        <div className="glass-sm px-3 py-1.5 text-xs text-glass-muted">
+          中国气象局
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-3">
-        <div className="glass-sm px-2.5 py-1 text-xs flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getAqiDotColor(current.aqi) }} />
-          <span className="glass-text-secondary">空气质量</span>
-          <span className="font-medium" style={{ color: getAqiDotColor(current.aqi) }}>
-            {getAqiShortLabel(current.aqi)} {current.aqi}
-          </span>
+      {/* 主天气信息 - 大面积展示 */}
+      <div className="flex items-start gap-6 md:gap-10 pt-2">
+        <div className="flex-shrink-0">
+          <span className="text-5xl md:text-6xl lg:text-7xl">{icon}</span>
         </div>
-        <span className="text-[11px] glass-text-muted">
-          {current.updateTime.slice(11, 16)} 更新
-        </span>
+        <div className="flex-1 min-w-0">
+          <p className="text-glass-primary text-2xl md:text-3xl font-semibold">
+            {current.weatherText}
+          </p>
+          <p className="text-glass-primary text-6xl md:text-7xl lg:text-8xl font-light tracking-tight mt-1">
+            {current.temperature}°
+          </p>
+        </div>
+      </div>
+
+      {/* 体感 + 湿度 + 风速 概览 */}
+      <div className="flex gap-6 md:gap-10 text-sm md:text-base">
+        <div className="flex items-center gap-2">
+          <span className="text-glass-muted">体感</span>
+          <span className="text-glass-primary font-medium">{current.feelsLike}°</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-glass-muted">湿度</span>
+          <span className="text-glass-primary font-medium">{current.humidity}%</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-glass-muted">{current.windDirection}</span>
+          <span className="text-glass-primary font-medium">{current.windSpeed}km/h</span>
+        </div>
+      </div>
+
+      {/* AQI 突出显示 */}
+      <AQIBadge aqi={current.aqi} category={current.aqiCategory} />
+    </section>
+  )
+}
+
+function AQIBadge({ aqi, category }: { aqi: number; category: string }) {
+  const color = aqiColor(aqi)
+
+  return (
+    <div className="glass-light px-4 py-3 fade-in-delay-2 flex items-center gap-4">
+      <div className="flex items-center gap-2">
+        <span
+          className="inline-block w-3 h-3 rounded-full"
+          style={{ backgroundColor: color }}
+        />
+        <span className="text-glass-secondary text-sm font-medium">空气质量</span>
+      </div>
+      <span className="text-glass-primary text-xl md:text-2xl font-semibold">{aqi}</span>
+      <span className="text-glass-secondary text-sm">{category}</span>
+      <div className="flex-1 flex items-center gap-1 ml-4">
+        <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-1000 ease-out"
+            style={{
+              width: `${Math.min((aqi / 300) * 100, 100)}%`,
+              backgroundColor: color,
+            }}
+          />
+        </div>
       </div>
     </div>
   )
 }
 
-function getAqiDotColor(aqi: number): string {
-  if (aqi <= 50) return '#22c55e'
-  if (aqi <= 100) return '#eab308'
-  if (aqi <= 150) return '#f97316'
-  if (aqi <= 200) return '#ef4444'
-  if (aqi <= 300) return '#a855f7'
+function aqiColor(aqi: number): string {
+  if (aqi <= 50) return '#00e400'
+  if (aqi <= 100) return '#ffff00'
+  if (aqi <= 150) return '#ff7e00'
+  if (aqi <= 200) return '#ff0000'
+  if (aqi <= 300) return '#99004c'
   return '#7e0023'
-}
-
-function getAqiShortLabel(aqi: number): string {
-  if (aqi <= 50) return '优'
-  if (aqi <= 100) return '良'
-  if (aqi <= 150) return '轻度'
-  if (aqi <= 200) return '中度'
-  if (aqi <= 300) return '重度'
-  return '严重'
 }

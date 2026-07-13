@@ -1,75 +1,72 @@
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import type { WeatherType } from '@/data/types'
-import { createParticleSystem, drawBackground } from '@/utils/weatherCanvas'
+
+const videoMap: Record<string, string> = {
+  sunny: '/weathering/videos/sunny.mp4',
+  partly_cloudy: '/weathering/videos/partly_cloudy.mp4',
+  cloudy: '/weathering/videos/cloudy.mp4',
+  overcast: '/weathering/videos/cloudy.mp4',
+  light_rain: '/weathering/videos/rain.mp4',
+  moderate_rain: '/weathering/videos/rain.mp4',
+  heavy_rain: '/weathering/videos/thunderstorm.mp4',
+  thunderstorm: '/weathering/videos/thunderstorm.mp4',
+  snow: '/weathering/videos/snow.mp4',
+  fog: '/weathering/videos/fog.mp4',
+  haze: '/weathering/videos/fog.mp4',
+  windy: '/weathering/videos/windy.mp4',
+}
 
 interface WeatherAnimationProps {
   weatherType: WeatherType
 }
 
 export default function WeatherAnimation({ weatherType }: WeatherAnimationProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const speedRef = useRef(1)
-  const systemRef = useRef<ReturnType<typeof createParticleSystem> | null>(null)
-  const rafRef = useRef<number>(0)
-  const frameRef = useRef(0)
-  const weatherRef = useRef(weatherType)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const prevSrcRef = useRef<string>(videoMap[weatherType])
+  const [opacity, setOpacity] = useState(1)
+  const [currentSrc, setCurrentSrc] = useState(videoMap[weatherType])
 
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-      if (systemRef.current) {
-        systemRef.current.resize(canvas.width, canvas.height)
-      }
-    }
-    resize()
-    window.addEventListener('resize', resize)
-
-    systemRef.current = createParticleSystem(weatherRef.current, canvas.width, canvas.height)
-
-    const loop = () => {
-      frameRef.current++
-      const s = speedRef.current
-      drawBackground(ctx!, weatherRef.current, canvas.width, canvas.height, frameRef.current)
-      systemRef.current?.update(s)
-      systemRef.current?.draw(ctx!)
-      rafRef.current = requestAnimationFrame(loop)
-    }
-    rafRef.current = requestAnimationFrame(loop)
-
-    return () => {
-      window.removeEventListener('resize', resize)
-      cancelAnimationFrame(rafRef.current)
-    }
+  const handleVideoEnd = useCallback(() => {
+    const v = videoRef.current
+    if (v) v.currentTime = 0
   }, [])
 
   useEffect(() => {
-    weatherRef.current = weatherType
-    if (systemRef.current) {
-      systemRef.current = createParticleSystem(weatherType, canvasRef.current?.width ?? window.innerWidth, canvasRef.current?.height ?? window.innerHeight)
-    }
+    const newSrc = videoMap[weatherType]
+    if (newSrc === prevSrcRef.current) return
+
+    // Fade out, swap src, fade in
+    setOpacity(0)
+    const timer = setTimeout(() => {
+      setCurrentSrc(newSrc)
+      prevSrcRef.current = newSrc
+      setOpacity(1)
+    }, 800)
+
+    return () => clearTimeout(timer)
   }, [weatherType])
 
-  const handlePointerDown = useCallback(() => {
-    speedRef.current = 3
-  }, [])
-  const handlePointerUp = useCallback(() => {
-    speedRef.current = 1
-  }, [])
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v) return
+    v.play().catch(() => {})
+  }, [currentSrc])
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 z-0 cursor-pointer"
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-      onContextMenu={e => e.preventDefault()}
-    />
+    <>
+      <video
+        ref={videoRef}
+        key={currentSrc}
+        src={currentSrc}
+        autoPlay
+        loop
+        muted
+        playsInline
+        onEnded={handleVideoEnd}
+        className="fixed inset-0 w-full h-full object-cover video-transition"
+        style={{ opacity, zIndex: 0 }}
+      />
+      <div className="video-overlay" />
+    </>
   )
 }
