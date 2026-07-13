@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef } from 'react'
-import { motion } from 'framer-motion'
 import type { GeoLocation } from '@/data/types'
 import { searchLocation } from '@/data/dataService'
 
@@ -16,21 +15,14 @@ export default function SearchBar({ onSelect, currentLocation }: SearchBarProps)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleSearch = useCallback(async (value: string) => {
-    if (value.length < 2) {
-      setResults([])
-      setShowResults(false)
-      return
-    }
+    if (value.length < 2) { setResults([]); setShowResults(false); return }
     setLoading(true)
     try {
       const locations = await searchLocation(value)
       setResults(locations)
       setShowResults(locations.length > 0)
-    } catch {
-      setResults([])
-    } finally {
-      setLoading(false)
-    }
+    } catch { setResults([]) }
+    finally { setLoading(false) }
   }, [])
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +40,7 @@ export default function SearchBar({ onSelect, currentLocation }: SearchBarProps)
 
   return (
     <div className="relative w-full">
-      <div className="glass flex items-center gap-2 px-3 py-2">
+      <div className="glass flex items-center gap-2 px-3 py-2.5">
         <svg className="w-4 h-4 glass-text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
@@ -62,20 +54,12 @@ export default function SearchBar({ onSelect, currentLocation }: SearchBarProps)
           className="w-full bg-transparent glass-text placeholder:text-white/30 outline-none text-sm"
         />
         {loading && (
-          <motion.div
-            className="w-3.5 h-3.5 border-2 border-white/20 border-t-white/60 rounded-full shrink-0"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          />
+          <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white/60 rounded-full spin shrink-0" />
         )}
       </div>
 
       {showResults && (
-        <motion.div
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute top-full mt-1 w-full glass overflow-hidden z-50 shadow-2xl"
-        >
+        <div className="absolute top-full mt-1 w-full glass overflow-hidden z-50 shadow-2xl fade-in">
           {results.map(loc => (
             <button
               key={loc.id}
@@ -86,7 +70,7 @@ export default function SearchBar({ onSelect, currentLocation }: SearchBarProps)
               <span className="glass-text-muted text-xs">{loc.latitude.toFixed(2)}N</span>
             </button>
           ))}
-        </motion.div>
+        </div>
       )}
 
       <div className="mt-1.5 text-[11px] glass-text-muted flex items-center gap-1">

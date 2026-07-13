@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import type { CurrentWeather } from '@/data/types'
 import { weatherIconMap } from '@/utils/weatherUtils'
 
@@ -10,27 +9,15 @@ export default function WeatherHero({ current }: WeatherHeroProps) {
   const icon = weatherIconMap[current.weatherType] || '☁'
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="glass p-6"
-    >
+    <div className="glass p-6 fade-in">
       <div className="flex items-start justify-between">
         <div>
-          <motion.div
-            className="text-6xl"
-            animate={{ y: [0, -4, 0], scale: [1, 1.05, 1] }}
-            transition={{ duration: 3, repeat: Infinity }}
-          >
-            {icon}
-          </motion.div>
+          <div className="text-6xl">{icon}</div>
           <div className="text-lg glass-text-secondary mt-2">{current.weatherText}</div>
           <div className="text-xs glass-text-muted mt-0.5">
             体感 {current.feelsLike}° · 湿度 {current.humidity}%
           </div>
         </div>
-
         <div className="text-right">
           <div className="text-8xl font-extralight glass-text tracking-tighter leading-none">
             {current.temperature}
@@ -41,15 +28,9 @@ export default function WeatherHero({ current }: WeatherHeroProps) {
 
       <div className="mt-4 flex items-center gap-3">
         <div className="glass-sm px-2.5 py-1 text-xs flex items-center gap-1.5">
-          <span
-            className="w-2.5 h-2.5 rounded-full"
-            style={{ backgroundColor: getAqiDotColor(current.aqi) }}
-          />
+          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getAqiDotColor(current.aqi) }} />
           <span className="glass-text-secondary">空气质量</span>
-          <span
-            className="font-medium"
-            style={{ color: getAqiDotColor(current.aqi) }}
-          >
+          <span className="font-medium" style={{ color: getAqiDotColor(current.aqi) }}>
             {getAqiShortLabel(current.aqi)} {current.aqi}
           </span>
         </div>
@@ -57,7 +38,7 @@ export default function WeatherHero({ current }: WeatherHeroProps) {
           {current.updateTime.slice(11, 16)} 更新
         </span>
       </div>
-    </motion.div>
+    </div>
   )
 }
 

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import type { HourlyItem } from '@/data/types'
 import { weatherIconMap } from '@/utils/weatherUtils'
 
@@ -8,14 +7,8 @@ interface HourlyForecastProps {
 
 export default function HourlyForecast({ hourly }: HourlyForecastProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.15 }}
-      className="glass p-4"
-    >
+    <div className="glass p-4 fade-in-delay-2">
       <h3 className="text-sm font-medium glass-text-muted mb-3">逐时预报</h3>
-
       <div className="overflow-x-auto scrollbar-hide">
         <div className="flex gap-4 pb-1" style={{ minWidth: hourly.length * 72 }}>
           {hourly.map((item, i) => (
@@ -30,6 +23,6 @@ export default function HourlyForecast({ hourly }: HourlyForecastProps) {
           ))}
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
