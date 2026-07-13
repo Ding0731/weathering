@@ -74,9 +74,10 @@ export function createParticleSystem(weatherType: WeatherType, w: number, h: num
         break
       case 'light_rain':
         for (let i = 0; i < 60; i++) {
+          const vy = 4 + Math.random() * 2
           particles.push({
             x: Math.random() * w, y: Math.random() * h * -0.2,
-            vx: -0.5, vy: 4 + Math.random() * 2,
+            vx: -0.5, vy,
             size: 1, opacity: 0.3 + Math.random() * 0.2, life: 0,
             maxLife: Math.floor(h / vy) + 10,
           })
@@ -84,9 +85,10 @@ export function createParticleSystem(weatherType: WeatherType, w: number, h: num
         break
       case 'moderate_rain': case 'heavy_rain':
         for (let i = 0; i < 100; i++) {
+          const vy = 6 + Math.random() * 3
           particles.push({
             x: Math.random() * w, y: Math.random() * h * -0.3,
-            vx: -0.8, vy: 6 + Math.random() * 3,
+            vx: -0.8, vy,
             size: 1.5, opacity: 0.35 + Math.random() * 0.25, life: 0,
             maxLife: Math.floor(h / vy) + 10,
           })
@@ -94,9 +96,10 @@ export function createParticleSystem(weatherType: WeatherType, w: number, h: num
         break
       case 'thunderstorm':
         for (let i = 0; i < 80; i++) {
+          const vy = 7 + Math.random() * 3
           particles.push({
             x: Math.random() * w, y: Math.random() * h * -0.3,
-            vx: -1, vy: 7 + Math.random() * 3,
+            vx: -1, vy,
             size: 1.5, opacity: 0.4 + Math.random() * 0.2, life: 0,
             maxLife: Math.floor(h / vy) + 10,
           })
@@ -104,9 +107,10 @@ export function createParticleSystem(weatherType: WeatherType, w: number, h: num
         break
       case 'snow':
         for (let i = 0; i < 50; i++) {
+          const vy = 1 + Math.random() * 1.5
           particles.push({
             x: Math.random() * w, y: Math.random() * h * -0.2,
-            vx: (Math.random() - 0.5) * 0.5, vy: 1 + Math.random() * 1.5,
+            vx: (Math.random() - 0.5) * 0.5, vy,
             size: 2 + Math.random() * 3, opacity: 0.4 + Math.random() * 0.3, life: 0,
             maxLife: Math.floor(h / Math.max(vy, 0.5)) + 20,
             extra: { wobble: Math.random() * 6.28 },
@@ -125,9 +129,11 @@ export function createParticleSystem(weatherType: WeatherType, w: number, h: num
         break
       case 'windy':
         for (let i = 0; i < 15; i++) {
+          const vx = 3 + Math.random() * 2
+          const vy = (Math.random() - 0.5) * 0.5
           particles.push({
             x: Math.random() * w * -0.1, y: h * (0.1 + Math.random() * 0.7),
-            vx: 3 + Math.random() * 2, vy: (Math.random() - 0.5) * 0.5,
+            vx, vy,
             size: 30 + Math.random() * 20, opacity: 0.1 + Math.random() * 0.15, life: 0,
             maxLife: Math.floor(w / Math.max(vx, 1)) + 5,
           })

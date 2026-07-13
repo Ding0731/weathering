@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import type { WeatherType } from '@/data/types'
 import { createParticleSystem, drawBackground } from '@/utils/weatherCanvas'
 
@@ -9,7 +9,6 @@ interface WeatherAnimationProps {
 export default function WeatherAnimation({ weatherType }: WeatherAnimationProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const speedRef = useRef(1)
-  const [speedLabel, setSpeedLabel] = useState(1)
   const systemRef = useRef<ReturnType<typeof createParticleSystem> | null>(null)
   const rafRef = useRef<number>(0)
   const frameRef = useRef(0)
@@ -58,11 +57,9 @@ export default function WeatherAnimation({ weatherType }: WeatherAnimationProps)
 
   const handlePointerDown = useCallback(() => {
     speedRef.current = 3
-    setSpeedLabel(3)
   }, [])
   const handlePointerUp = useCallback(() => {
     speedRef.current = 1
-    setSpeedLabel(1)
   }, [])
 
   return (

@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { GeoLocation } from '@/data/types'
 import { searchLocation } from '@/data/dataService'
 
 interface GeoState {
